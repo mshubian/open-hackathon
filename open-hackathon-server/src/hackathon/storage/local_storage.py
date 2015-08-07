@@ -32,6 +32,7 @@ import json
 import time
 import uuid
 from werkzeug.datastructures import FileStorage
+from flask import g
 
 from hackathon.constants import FILE_TYPE, HEALTH_STATUS, HEALTH
 from storage import Storage
@@ -167,14 +168,12 @@ class LocalStorage(Storage):
         :rtype str
         :return public accessable URI
         """
-        # only upladed images need an URI.
         # example: http://localhost:15000/static/pic/upload/win10-201456-1234.jpg
-        if file_type == FILE_TYPE.HACK_IMAGE:
-            i = physical_path.index("static")
-            path = physical_path[i:]
-            return self.util.get_config("endpoint") + "/" + path
 
-        return ""
+        i = physical_path.index("static")
+        path = physical_path[i:]
+        return self.util.get_config("endpoint") + "/" + path
+
 
     def __generate_physical_path(self, file_name, file_type, hackathon_name=None):
         """Return the physical path of file including directory and file name
@@ -195,10 +194,19 @@ class LocalStorage(Storage):
                 time.strftime("%Y%m%d"),
                 file_name)
             return abspath(path)
-
-        return abspath("%s/resources/lib/%s" % (
-            self.__get_storage_base_dir(),
-            file_name))
+        elif file_type == FILE_TYPE.TEMPLATE:
+            path = "%s/static/template/upload%s/%s/%s" % (
+                self.__get_storage_base_dir(),
+                "/" + g.user.name if g.user.name else "",
+                time.strftime("%Y%m%d"),
+                file_name)
+            return abspath(path)
+        else:
+            return abspath("%s/static/%s/upload/%s/%s" % (
+                self.__get_storage_base_dir(),
+                file_type,
+                time.strftime("%Y%m%d"),
+                file_name))
 
     def __generate_file_name(self, origin_name, hackathon_name=None):
         """Generate a random file name

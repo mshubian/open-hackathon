@@ -170,53 +170,33 @@ class VirtualMachine(ResourceBase):
            Else reuse virtual machine in azure subscription
         :return:
         """
+        # add log to azure
         commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.START)
         commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.START)
+
         deployment_slot = template_unit.get_deployment_slot()
-        # avoid virtual machine name conflict on same name in template
-        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
-                                                                 experiment_id)
+        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(), experiment_id)
         virtual_machine_size = template_unit.get_virtual_machine_size()
-        if self.subscription.get_available_core_count() < self.SIZE_CORE_MAP[virtual_machine_size.lower()]:
-            m = self.CREATE_DEPLOYMENT_ERROR[1] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_slot)
-            commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.FAIL, m, 1)
-            self.log.error(m)
-            m = self.CREATE_VIRTUAL_MACHINE_ERROR[1] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
-            commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 1)
-            self.log.error(m)
+
+        # avoid virtual machine name conflict on same name in template
+        if not self.__check_available_cores(experiment_id, deployment_slot, virtual_machine_name, virtual_machine_size):
             return False
+
         cloud_service_name = template_unit.get_cloud_service_name()
         vm_image_name = template_unit.get_vm_image_name()
         system_config = template_unit.get_system_config()
         os_virtual_hard_disk = template_unit.get_os_virtual_hard_disk()
+
         # avoid duplicate deployment in azure subscription
         if self.service.deployment_exists(cloud_service_name, deployment_slot):
             # use deployment name from azure subscription
+
             deployment_name = self.service.get_deployment_name(cloud_service_name, deployment_slot)
-            if contain_azure_deployment(cloud_service_name, deployment_slot):
-                m = self.CREATE_DEPLOYMENT_INFO[1] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_name, AZURE_FORMATION)
-                commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.END, m, 1)
-            else:
-                m = self.CREATE_DEPLOYMENT_INFO[2] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_name, AZURE_FORMATION)
-                commit_azure_deployment(deployment_name,
-                                        deployment_slot,
-                                        ADStatus.RUNNING,
-                                        cloud_service_name,
-                                        experiment_id)
-                commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.END, m, 2)
-            self.log.debug(m)
+            self.__check_deployment(deployment_name,experiment_id, cloud_service_name, deployment_slot)
+
             # avoid duplicate virtual machine in azure subscription
             if self.service.virtual_machine_exists(cloud_service_name, deployment_name, virtual_machine_name):
-                if contain_azure_virtual_machine(cloud_service_name, deployment_name, virtual_machine_name):
-                    m = self.CREATE_VIRTUAL_MACHINE_INFO[1] % (
-                    AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, AZURE_FORMATION)
-                    commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.END, m, 1)
-                    self.log.debug(m)
-                else:
-                    m = self.CREATE_VIRTUAL_MACHINE_ERROR[4] % (
-                    AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, AZURE_FORMATION)
-                    commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 4)
-                    self.log.error(m)
+                if not self.__check_vm_exist:
                     return False
             else:
                 # delete old azure virtual machine, cascade delete old azure endpoint
@@ -665,3 +645,42 @@ class VirtualMachine(ResourceBase):
                                                       public_ip,
                                                       remote_port)
         update_virtual_environment_remote_paras(virtual_machine, json.dumps(remote_paras))
+
+    # ----------------------------------------------refactor usage ----------------------------------------------#
+
+    def __check_available_cores(self,experiment_id, deployment_slot, virtual_machine_name, virtual_machine_size):
+        if self.subscription.get_available_core_count() < self.SIZE_CORE_MAP[virtual_machine_size.lower()]:
+            m = self.CREATE_DEPLOYMENT_ERROR[1] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_slot)
+            commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.FAIL, m, 1)
+            self.log.error(m)
+            m = self.CREATE_VIRTUAL_MACHINE_ERROR[1] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
+            commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 1)
+            self.log.error(m)
+            return False
+
+    def __check_deployment(self, deployment_name,experiment_id, cloud_service_name, deployment_slot):
+        # use deployment name from azure subscription
+        if contain_azure_deployment(cloud_service_name, deployment_slot):
+            m = self.CREATE_DEPLOYMENT_INFO[1] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_name, AZURE_FORMATION)
+            commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.END, m, 1)
+        else:
+            m = self.CREATE_DEPLOYMENT_INFO[2] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_name, AZURE_FORMATION)
+            commit_azure_deployment(deployment_name,
+                                    deployment_slot,
+                                    ADStatus.RUNNING,
+                                    cloud_service_name,
+                                    experiment_id)
+            commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.END, m, 2)
+        self.log.debug(m)
+
+    def __check_vm_exist(self, experiment_id, cloud_service_name, deployment_name, virtual_machine_name):
+        if contain_azure_virtual_machine(cloud_service_name, deployment_name, virtual_machine_name):
+            m = self.CREATE_VIRTUAL_MACHINE_INFO[1] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, AZURE_FORMATION)
+            commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.END, m, 1)
+            self.log.debug(m)
+            return True
+        else:
+            m = self.CREATE_VIRTUAL_MACHINE_ERROR[4] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, AZURE_FORMATION)
+            commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 4)
+            self.log.error(m)
+            return False
