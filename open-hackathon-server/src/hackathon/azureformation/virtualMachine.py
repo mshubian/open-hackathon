@@ -163,6 +163,8 @@ class VirtualMachine(ResourceBase):
     def __init__(self, azure_key_id):
         super(VirtualMachine, self).__init__(azure_key_id)
 
+    # --------------------------------------------- create vm functions ---------------------------------------------#
+
     def create_virtual_machine(self, experiment_id, template_unit):
         """
         0. Prerequisites: a. storage account and cloud service exist in both azure and database;
@@ -209,6 +211,25 @@ class VirtualMachine(ResourceBase):
     def create_virtual_machine_async_true_1(self, experiment_id, template_unit):
         cloud_service_name = template_unit.get_cloud_service_name()
         deployment_slot = template_unit.get_deployment_slot()
+
+        # query virtual machine status
+        args_context = Context(
+            cloud_service_name=cloud_service_name,
+            deployment_name=self.service.get_deployment_name(cloud_service_name, deployment_slot),
+            virtual_machine_name='%s-%d' % (template_unit.get_virtual_machine_name(),experiment_id),
+            status=AVMStatus.READY_ROLE,
+            true_mdl_cls_func=MDL_CLS_FUNC[9],
+            true_cls_args=(self.azure_key_id,),
+            true_func_args=(experiment_id, template_unit)
+        )
+        self.scheduler.add_once(feature='service',
+                                method='query_virtual_machine_status',
+                                context=args_context,
+                                seconds=3)
+
+    def create_virtual_machine_async_true_2(self, experiment_id, template_unit):
+        cloud_service_name = template_unit.get_cloud_service_name()
+        deployment_slot = template_unit.get_deployment_slot()
         deployment_name = self.service.get_deployment_name(cloud_service_name, deployment_slot)
         virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
                                                                  experiment_id)
@@ -216,12 +237,38 @@ class VirtualMachine(ResourceBase):
         run_job(MDL_CLS_FUNC[8],
                 (self.azure_key_id,),
                 (cloud_service_name, deployment_name, virtual_machine_name, AVMStatus.READY_ROLE,
-                 MDL_CLS_FUNC[9], (self.azure_key_id,), (experiment_id, template_unit)),
+                 MDL_CLS_FUNC[12], (self.azure_key_id,), (experiment_id, template_unit)),
                 VIRTUAL_MACHINE_TICK)
+    def create_virtual_machine_async_true_3(self, experiment_id, template_unit):
+        cloud_service_name = template_unit.get_cloud_service_name()
+        deployment_name = template_unit.get_deployment_name()
+
+        # query deployment status
+        run_job(MDL_CLS_FUNC[15],
+                (self.azure_key_id,),
+                (cloud_service_name, deployment_name,
+                 MDL_CLS_FUNC[16], (self.azure_key_id,), (experiment_id, template_unit)),
+                 DEPLOYMENT_TICK)
 
     def create_virtual_machine_async_false_1(self, experiment_id, template_unit):
         virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
                                                                  experiment_id)
+        m = self.CREATE_VIRTUAL_MACHINE_ERROR[2] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
+        commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 2)
+        self.log.error(m)
+    def create_virtual_machine_async_false_2(self, experiment_id, template_unit):
+        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
+                                                                 experiment_id)
+        m = self.CREATE_VIRTUAL_MACHINE_ERROR[3] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
+        commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 3)
+        self.log.error(m)
+    def create_virtual_machine_async_false_3(self, experiment_id, template_unit):
+        deployment_slot = template_unit.get_deployment_slot()
+        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
+                                                                 experiment_id)
+        m = self.CREATE_DEPLOYMENT_ERROR[2] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_slot)
+        commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.FAIL, m, 2)
+        self.log.error(m)
         m = self.CREATE_VIRTUAL_MACHINE_ERROR[2] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
         commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 2)
         self.log.error(m)
@@ -246,50 +293,8 @@ class VirtualMachine(ResourceBase):
                      MDL_CLS_FUNC[11], (self.azure_key_id,), (experiment_id, template_unit)))
         else:
             self.__create_virtual_machine_helper(experiment_id, template_unit)
-
-    def create_virtual_machine_async_true_2(self, experiment_id, template_unit):
-        cloud_service_name = template_unit.get_cloud_service_name()
-        deployment_slot = template_unit.get_deployment_slot()
-        deployment_name = self.service.get_deployment_name(cloud_service_name, deployment_slot)
-        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
-                                                                 experiment_id)
-        # query virtual machine status
-        run_job(MDL_CLS_FUNC[8],
-                (self.azure_key_id,),
-                (cloud_service_name, deployment_name, virtual_machine_name, AVMStatus.READY_ROLE,
-                 MDL_CLS_FUNC[12], (self.azure_key_id,), (experiment_id, template_unit)),
-                VIRTUAL_MACHINE_TICK)
-
-    def create_virtual_machine_async_false_2(self, experiment_id, template_unit):
-        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
-                                                                 experiment_id)
-        m = self.CREATE_VIRTUAL_MACHINE_ERROR[3] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
-        commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 3)
-        self.log.error(m)
-
     def create_virtual_machine_vm_true_2(self, experiment_id, template_unit):
         self.__create_virtual_machine_helper(experiment_id, template_unit)
-
-    def create_virtual_machine_async_true_3(self, experiment_id, template_unit):
-        cloud_service_name = template_unit.get_cloud_service_name()
-        deployment_name = template_unit.get_deployment_name()
-        # query deployment status
-        run_job(MDL_CLS_FUNC[15],
-                (self.azure_key_id,),
-                (cloud_service_name, deployment_name,
-                 MDL_CLS_FUNC[16], (self.azure_key_id,), (experiment_id, template_unit)),
-                DEPLOYMENT_TICK)
-
-    def create_virtual_machine_async_false_3(self, experiment_id, template_unit):
-        deployment_slot = template_unit.get_deployment_slot()
-        virtual_machine_name = self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
-                                                                 experiment_id)
-        m = self.CREATE_DEPLOYMENT_ERROR[2] % (AZURE_RESOURCE_TYPE.DEPLOYMENT, deployment_slot)
-        commit_azure_log(experiment_id, ALOperation.CREATE_DEPLOYMENT, ALStatus.FAIL, m, 2)
-        self.log.error(m)
-        m = self.CREATE_VIRTUAL_MACHINE_ERROR[2] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name)
-        commit_azure_log(experiment_id, ALOperation.CREATE_VIRTUAL_MACHINE, ALStatus.FAIL, m, 2)
-        self.log.error(m)
 
     def create_virtual_machine_dm_true(self, experiment_id, template_unit):
         cloud_service_name = template_unit.get_cloud_service_name()
@@ -311,6 +316,8 @@ class VirtualMachine(ResourceBase):
                 (cloud_service_name, deployment_name, virtual_machine_name, AVMStatus.READY_ROLE,
                  MDL_CLS_FUNC[9], (self.azure_key_id,), (experiment_id, template_unit)),
                 VIRTUAL_MACHINE_TICK)
+
+    # --------------------------------------------- stop vm functions ---------------------------------------------#
 
     def stop_virtual_machine(self, experiment_id, template_unit, action):
         """
@@ -406,6 +413,8 @@ class VirtualMachine(ResourceBase):
         m = self.STOP_VIRTUAL_MACHINE_INFO[0] % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, need_status)
         commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 0)
         self.log.debug(m)
+
+    # --------------------------------------------- start vm functions ---------------------------------------------#
 
     def start_virtual_machine(self, experiment_id, template_unit):
         """
@@ -598,7 +607,6 @@ class VirtualMachine(ResourceBase):
     # ----------------------------------------------refactor usage ----------------------------------------------#
 
     def __generate_create_VM_context(self, experiment_id, template_unit):
-
         return Context(
             deployment_slot=template_unit.get_deployment_slot(),
             virtual_machine_name=self.VIRTUAL_MACHINE_NAME_BASE % (template_unit.get_virtual_machine_name(),
@@ -715,7 +723,7 @@ class VirtualMachine(ResourceBase):
             raise InternalServerError("Azure create vm with deployment failed")
 
         # query async operation status
-        query_context = Context(
+        args_context = Context(
             request_id=result.id,
             true_mdl_cls_func=MDL_CLS_FUNC[13],
             true_cls_args=(self.azure_key_id,),
@@ -726,5 +734,5 @@ class VirtualMachine(ResourceBase):
         )
         self.scheduler.add_once(feature='service',
                                 method='query_async_operation_status',
-                                context=query_context,
+                                context=args_context,
                                 seconds=3)
