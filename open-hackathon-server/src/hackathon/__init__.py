@@ -135,7 +135,7 @@ def init_components():
     from hackathon.database import db_session
     from hackathon.database.db_adapters import SQLAlchemyAdapter
     from hackathon.user import UserManager
-    from hackathon.azureformation.fileService import FileService
+    from hackathon.azureformation.azure_file_service import FileService
     from hackathon.azureformation.azureCertManagement import AzureCertManagement
     from hackathon.hack import HackathonManager, AdminManager, TeamManager, DockerHostManager
     from hackathon.registration.register_mgr import RegisterManager

@@ -35,7 +35,7 @@ from sqlalchemy import __version__
 from hackathon.constants import HEALTH_STATUS
 from hackathon import RequiredFeature, Component
 from hackathon.database.models import User, AzureKey
-from hackathon.azureformation.service import Service
+from hackathon.azureformation.azure_service import AzureService
 
 __all__ = [
     "MySQLHealthCheck",
@@ -136,7 +136,7 @@ class AzureHealthCheck(HealthCheck):
 
     def report_health(self):
         azure_key = self.db.find_first_object(AzureKey)
-        azure = Service(azure_key.id)
+        azure = AzureService(azure_key.id)
         if azure.ping():
             return {
                 STATUS: HEALTH_STATUS.OK

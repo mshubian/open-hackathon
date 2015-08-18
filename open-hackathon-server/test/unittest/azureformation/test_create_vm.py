@@ -22,23 +22,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
-__author__ = 'Yifu Huang'
 
-from hackathon.azureformation.azure_utility_db import (
-    load_template_from_experiment,
-    set_template_virtual_environment_count,
-)
-from hackathon.azureformation.templateUnit import (
-    TemplateUnit,
-)
+import unittest
+from hackathon.azureformation.azure_utility_db import MDL_CLS_FUNC
 
+class CreateVMTest(unittest.TestCase):
+    def setUp(self):
+        pass
+    def tearDown(self):
+        pass
 
-class TemplateFramework():
-    VIRTUAL_ENVIRONMENTS = 'virtual_environments'
-
-    def __init__(self, experiment_id):
-        self.template = load_template_from_experiment(experiment_id)
-        set_template_virtual_environment_count(experiment_id, len(self.template[self.VIRTUAL_ENVIRONMENTS]))
-
-    def get_template_units(self):
-        return map(TemplateUnit, self.template[self.VIRTUAL_ENVIRONMENTS])
+    def test_create_vm(self):
+        a = MDL_CLS_FUNC[9]
+        print a

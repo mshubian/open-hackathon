@@ -27,7 +27,7 @@ __author__ = 'Yifu Huang'
 import sys
 
 sys.path.append("..")
-from hackathon.azureformation.utility import (
+from hackathon.azureformation.azure_utility_db import (
     find_unassigned_endpoints,
 )
 from azure.servicemanagement import (

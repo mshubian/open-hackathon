@@ -29,7 +29,7 @@ sys.path.append("..")
 from hackathon.azureformation.templateFramework import (
     TemplateFramework,
 )
-from hackathon.azureformation.utility import (
+from hackathon.azureformation.azure_utility_db import (
     MDL_CLS_FUNC,
     run_job,
 )

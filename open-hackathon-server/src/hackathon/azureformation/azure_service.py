@@ -31,7 +31,7 @@ from hackathon.constants import (
     ADStatus,
 )
 
-from hackathon.azureformation.utility import (
+from hackathon.azureformation.azure_utility_db import (
     ASYNC_TICK,
     DEPLOYMENT_TICK,
     VIRTUAL_MACHINE_TICK,
@@ -50,7 +50,7 @@ import time
 from hackathon import Component
 
 
-class Service(ServiceManagementService, Component):
+class AzureService(ServiceManagementService, Component):
     """
     Wrapper of azure service management service
     """
@@ -62,17 +62,17 @@ class Service(ServiceManagementService, Component):
     def __init__(self, azure_key_id):
         self.azure_key_id = azure_key_id
         azure_key = self.db.get_object(AzureKey, self.azure_key_id)
-        super(Service, self).__init__(azure_key.subscription_id, azure_key.pem_url, azure_key.management_host)
+        super(AzureService, self).__init__(azure_key.subscription_id, azure_key.pem_url, azure_key.management_host)
 
     # ---------------------------------------- subscription ---------------------------------------- #
 
     def get_subscription(self):
-        return super(Service, self).get_subscription()
+        return super(AzureService, self).get_subscription()
 
     # ---------------------------------------- storage account ---------------------------------------- #
 
     def get_storage_account_properties(self, name):
-        return super(Service, self).get_storage_account_properties(name)
+        return super(AzureService, self).get_storage_account_properties(name)
 
     def storage_account_exists(self, name):
         """
@@ -89,18 +89,18 @@ class Service(ServiceManagementService, Component):
         return props is not None
 
     def check_storage_account_name_availability(self, name):
-        return super(Service, self).check_storage_account_name_availability(name)
+        return super(AzureService, self).check_storage_account_name_availability(name)
 
     def create_storage_account(self, name, description, label, location):
-        return super(Service, self).create_storage_account(name, description, label, location=location)
+        return super(AzureService, self).create_storage_account(name, description, label, location=location)
 
     def list_storage_accounts(self):
-        return super(Service, self).list_storage_accounts()
+        return super(AzureService, self).list_storage_accounts()
 
     # ---------------------------------------- cloud service ---------------------------------------- #
 
     def get_hosted_service_properties(self, name, detail=False):
-        return super(Service, self).get_hosted_service_properties(name, detail)
+        return super(AzureService, self).get_hosted_service_properties(name, detail)
 
     def cloud_service_exists(self, name):
         """
@@ -117,18 +117,18 @@ class Service(ServiceManagementService, Component):
         return props is not None
 
     def check_hosted_service_name_availability(self, name):
-        return super(Service, self).check_hosted_service_name_availability(name)
+        return super(AzureService, self).check_hosted_service_name_availability(name)
 
     def create_hosted_service(self, name, label, location):
-        return super(Service, self).create_hosted_service(name, label, location=location)
+        return super(AzureService, self).create_hosted_service(name, label, location=location)
 
     # ---------------------------------------- deployment ---------------------------------------- #
 
     def get_deployment_by_slot(self, cloud_service_name, deployment_slot):
-        return super(Service, self).get_deployment_by_slot(cloud_service_name, deployment_slot)
+        return super(AzureService, self).get_deployment_by_slot(cloud_service_name, deployment_slot)
 
     def get_deployment_by_name(self, cloud_service_name, deployment_name):
-        return super(Service, self).get_deployment_by_name(cloud_service_name, deployment_name)
+        return super(AzureService, self).get_deployment_by_name(cloud_service_name, deployment_name)
 
     def deployment_exists(self, cloud_service_name, deployment_slot):
         try:
@@ -185,7 +185,7 @@ class Service(ServiceManagementService, Component):
                                           network_config,
                                           virtual_machine_size,
                                           vm_image_name):
-        return super(Service, self).create_virtual_machine_deployment(cloud_service_name,
+        return super(AzureService, self).create_virtual_machine_deployment(cloud_service_name,
                                                                       deployment_name,
                                                                       deployment_slot,
                                                                       virtual_machine_label,
@@ -227,7 +227,7 @@ class Service(ServiceManagementService, Component):
                                               deployment_name,
                                               virtual_machine_name,
                                               network_config):
-        return super(Service, self).update_role(cloud_service_name,
+        return super(AzureService, self).update_role(cloud_service_name,
                                                 deployment_name,
                                                 virtual_machine_name,
                                                 network_config=network_config)
@@ -262,7 +262,7 @@ class Service(ServiceManagementService, Component):
         return None
 
     def get_virtual_machine(self, cloud_service_name, deployment_name, role_name):
-        return super(Service, self).get_role(cloud_service_name, deployment_name, role_name)
+        return super(AzureService, self).get_role(cloud_service_name, deployment_name, role_name)
 
     def virtual_machine_exists(self, cloud_service_name, deployment_name, virtual_machine_name):
         try:
@@ -282,7 +282,7 @@ class Service(ServiceManagementService, Component):
                             network_config,
                             virtual_machine_size,
                             vm_image_name):
-        return super(Service, self).add_role(cloud_service_name,
+        return super(AzureService, self).add_role(cloud_service_name,
                                              deployment_name,
                                              virtual_machine_name,
                                              system_config,
@@ -304,10 +304,10 @@ class Service(ServiceManagementService, Component):
         return None
 
     def stop_virtual_machine(self, cloud_service_name, deployment_name, virtual_machine_name, type):
-        return super(Service, self).shutdown_role(cloud_service_name, deployment_name, virtual_machine_name, type)
+        return super(AzureService, self).shutdown_role(cloud_service_name, deployment_name, virtual_machine_name, type)
 
     def start_virtual_machine(self, cloud_service_name, deployment_name, virtual_machine_name):
-        return super(Service, self).start_role(cloud_service_name, deployment_name, virtual_machine_name)
+        return super(AzureService, self).start_role(cloud_service_name, deployment_name, virtual_machine_name)
 
     # ---------------------------------------- endpoint ---------------------------------------- #
 
@@ -331,7 +331,7 @@ class Service(ServiceManagementService, Component):
     # ---------------------------------------- other ---------------------------------------- #
 
     def get_operation_status(self, request_id):
-        return super(Service, self).get_operation_status(request_id)
+        return super(AzureService, self).get_operation_status(request_id)
 
     def wait_for_async(self, request_id, second_per_loop, loop):
         """

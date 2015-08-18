@@ -30,7 +30,7 @@ sys.path.append("..")
 from hackathon.azureformation.resourceBase import (
     ResourceBase,
 )
-from hackathon.azureformation.utility import (
+from hackathon.azureformation.azure_utility_db import (
     AZURE_FORMATION,
     MDL_CLS_FUNC,
     commit_azure_log,

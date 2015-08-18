@@ -27,8 +27,8 @@ __author__ = 'Yifu Huang'
 import sys
 
 sys.path.append("..")
-from hackathon.azureformation.service import (
-    Service,
+from hackathon.azureformation.azure_service import (
+    AzureService,
 )
 from hackathon.azureformation.subscription import (
     Subscription,
@@ -39,5 +39,5 @@ from hackathon import Component
 class ResourceBase(Component):
     def __init__(self, azure_key_id):
         self.azure_key_id = azure_key_id
-        self.service = Service(self.azure_key_id)
+        self.service = AzureService(self.azure_key_id)
         self.subscription = Subscription(self.service)
