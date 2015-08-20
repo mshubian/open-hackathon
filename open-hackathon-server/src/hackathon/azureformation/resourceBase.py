@@ -30,7 +30,7 @@ sys.path.append("..")
 from hackathon.azureformation.azure_service import (
     AzureService,
 )
-from hackathon.azureformation.subscription import (
+from hackathon.azureformation.azure_subscription_service import (
     Subscription,
 )
 from hackathon import Component

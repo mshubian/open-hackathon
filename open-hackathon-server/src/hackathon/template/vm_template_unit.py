@@ -41,7 +41,7 @@ from azure.servicemanagement import (
 from threading import (
     current_thread,
 )
-from hackathon import Component
+from hackathon import Component, RequiredFeature
 
 
 class VMTemplateUnit(Component):
@@ -170,13 +170,15 @@ class VMTemplateUnit(Component):
         os_virtual_hard_disk = OSVirtualHardDisk(i[self.NAME], media_link)
         return os_virtual_hard_disk
 
-    def get_network_config(self, service, update):
+    def get_network_config(self, azure_key_id, update):
         """
         Return None if image type is vm and not update
         Public endpoint should be assigned in real time
         :param service:
         :return:
         """
+        azure_service = RequiredFeature("azure_service")
+
         if self.is_vm_image() and not update:
             return None
         cs = self.virtual_environment[self.T_CLOUD_SERVICE]
@@ -185,7 +187,7 @@ class VMTemplateUnit(Component):
         network_config.configuration_set_type = nc[self.T_CONFIGURATION_SET_TYPE]
         input_endpoints = nc[self.T_INPUT_ENDPOINTS]
         # avoid duplicate endpoint under same cloud service
-        assigned_endpoints = service.get_assigned_endpoints(cs[self.SERVICE_NAME])
+        assigned_endpoints = azure_service.get_assigned_endpoints(azure_key_id, cs[self.SERVICE_NAME])
         endpoints = map(lambda i: i[self.T_LOCAL_PORT], input_endpoints)
         unassigned_endpoints = map(str, find_unassigned_endpoints(endpoints, assigned_endpoints))
         map(lambda (i, u): i.update({self.PORT: u}), zip(input_endpoints, unassigned_endpoints))

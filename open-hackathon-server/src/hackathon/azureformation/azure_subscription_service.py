@@ -28,52 +28,51 @@ import sys
 
 sys.path.append("..")
 
-from hackathon import Component
+from hackathon import Component, RequiredFeature
 
 
-class Subscription(Component):
+class SubscriptionService(Component):
+    azure_service = RequiredFeature("azure_service")
+
     """
     Subscription of azure resources according to given subscription id
     """
     ERROR_RESULT = -1
 
-    def __init__(self, service):
-        self.service = service
-
-    def get_available_storage_account_count(self):
+    def get_available_storage_account_count(self, azure_key_id):
         """
         Get available count of storage account
         Return -1 if failed
         :return:
         """
         try:
-            result = self.service.get_subscription()
+            result = self.azure_service.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT
         return result.max_storage_accounts - result.current_storage_accounts
 
-    def get_available_cloud_service_count(self):
+    def get_available_cloud_service_count(self, azure_key_id):
         """
         Get available count of cloud service
         Return -1 if failed
         :return:
         """
         try:
-            result = self.service.get_subscription()
+            result = self.azure_service.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT
         return result.max_hosted_services - result.current_hosted_services
 
-    def get_available_core_count(self):
+    def get_available_core_count(self, azure_key_id):
         """
         Get available count of core
         Return -1 if failed
         :return:
         """
         try:
-            result = self.service.get_subscription()
+            result = self.azure_service.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT

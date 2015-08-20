@@ -23,7 +23,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 # -----------------------------------------------------------------------------------
-from werkzeug.exceptions import HTTPException
 
 __author__ = 'Junbo Wang'
 __version__ = '2.0'
@@ -39,6 +38,8 @@ from hackathon_scheduler import HackathonScheduler
 from hackathon_response import *
 from log import log
 from context import Context
+from werkzeug.exceptions import HTTPException
+
 
 __all__ = [
     "app",
@@ -143,6 +144,9 @@ def init_components():
     from hackathon.remote.guacamole import GuacamoleInfo
     from hackathon.expr.expr_mgr import ExprManager
     from hackathon.cache.cache_mgr import CacheManagerExt
+    from hackathon.azureformation.azure_service import AzureService
+    from hackathon.azureformation.azure_subscription_service import SubscriptionService
+    from hackathon.azureformation.azure_vm_service import AzureVMService
 
     # dependencies MUST be provided in advance
     factory.provide("util", Utility)
@@ -178,6 +182,11 @@ def init_components():
     factory.provide("docker", get_class("hackathon.docker.docker_helper.DockerHelper"))
     factory.provide("hosted_docker", get_class("hackathon.docker.hosted_docker.HostedDockerFormation"))
     factory.provide("alauda_docker", get_class("hackathon.docker.alauda_docker.AlaudaDockerFormation"))
+
+    # azure
+    factory.provide("azure_service", AzureService)
+    factory.provide("azure_subscription_service", SubscriptionService)
+    factory.provide("azure_vm_service", AzureVMService)
 
     # storage
     init_hackathon_storage()
