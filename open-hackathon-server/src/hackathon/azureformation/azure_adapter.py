@@ -33,10 +33,7 @@ from hackathon.constants import (
 
 from hackathon.azureformation.azure_utility_db import (
     ASYNC_TICK,
-    DEPLOYMENT_TICK,
-    VIRTUAL_MACHINE_TICK,
-    MDL_CLS_FUNC,
-    run_job,
+    DEPLOYMENT_TICK
 )
 
 from hackathon.database.models import (
@@ -50,7 +47,7 @@ import time
 from hackathon import Component, RequiredFeature, Context
 
 
-class AzureService(Component):
+class AzureAdapter(Component):
     """
     Wrapper of azure service management service
     """
@@ -66,15 +63,15 @@ class AzureService(Component):
     #     azure_key = self.db.get_object(AzureKey, self.azure_key_id)
     #     super(AzureService, self).__init__(azure_key.subscription_id, azure_key.pem_url, azure_key.management_host)
 
-    azure_service = None
+    azure_adapter = None
 
     def generate_azure_service(self, azure_key_id):
         azure_key = self.db.get_object(AzureKey, azure_key_id)
-        if self.azure_service is not None and self.azure_service.subscription_id == azure_key.subscription_id:
-            return self.azure_service
-        self.azure_service = ServiceManagementService(azure_key.subscription_id, azure_key.pem_url,
+        if self.azure_adapter is not None and self.azure_adapter.subscription_id == azure_key.subscription_id:
+            return self.azure_adapter
+        self.azure_adapter = ServiceManagementService(azure_key.subscription_id, azure_key.pem_url,
                                                       azure_key.management_host)
-        return self.azure_service
+        return self.azure_adapter
 
     # ---------------------------------------- subscription ---------------------------------------- #
 
@@ -391,84 +388,90 @@ class AzureService(Component):
 
     # ---------------------------------------- call ---------------------------------------- #
 
-    def query_async_operation_status(self,
-                                     request_id,
-                                     azure_key_id,
-                                     feature,
-                                     true_method,
-                                     false_method,
-                                     method_args_context):
-        self.log.debug('query async operation status: request_id [%s]' % request_id)
-        result = self.get_operation_status(azure_key_id, request_id)
+    def query_async_operation_status(self, context):
+        """
+        :param context contains:
+                request_id,
+                azure_key_id,
+                feature,
+                true_method,
+                false_method,
+                method_args_context :
+                                    azure_key_id,
+                                    experiment_id,
+                                    template_unit
+        :return:
+        """
+        self.log.debug('query async operation status: request_id [%s]' % context.request_id)
+        # TODO catch Exception when get operation status
+        result = self.get_operation_status(context.azure_key_id, context.request_id)
         if result.status == self.IN_PROGRESS:
-            query_context = Context(
-                request_id=request_id,
-                azure_key_id=azure_key_id,
-                feature=feature,
-                true_method=true_method,
-                false_method=false_method,
-                method_args_context=method_args_context
-            )
             self.scheduler.add_once(feature='azure_service',
                                     method='query_async_operation_status',
-                                    context=query_context,
+                                    context=context,
                                     seconds=ASYNC_TICK)
         elif result.status == self.SUCCEEDED:
-            self.scheduler.add_once(feature=feature, method=true_method, context=method_args_context)
+            self.scheduler.add_once(feature=context.feature,
+                                    method=context.true_method,
+                                    context=context.method_args_context)
         else:
-            self.scheduler.add_once(feature=feature, method=false_method, context=method_args_context)
+            self.scheduler.add_once(feature=context.feature,
+                                    method=context.false_method,
+                                    context=context.method_args_context)
 
-    def query_deployment_status(self,
+    def query_deployment_status(self, context):
+        """
+        :param context contains:
                                 azure_key_id,
                                 cloud_service_name,
                                 deployment_name,
                                 feature,
                                 true_method,
-                                method_args_context):
-        self.log.debug('query deployment status: deployment_name [%s]' % deployment_name)
-        result = self.get_deployment_by_name(azure_key_id, cloud_service_name, deployment_name)
+                                method_args_context :
+                                                    azure_key_id,
+                                                    experiment_id,
+                                                    template_unit
+        :return:
+        """
+        self.log.debug('query deployment status: deployment_name [%s]' % context.deployment_name)
+        result = self.get_deployment_by_name(context.azure_key_id, context.cloud_service_name, context.deployment_name)
         if result.status == ADStatus.RUNNING:
-            self.scheduler.add_once(feature=feature, method=true_method, context=method_args_context)
+            self.scheduler.add_once(feature=context.feature,
+                                    method=context.true_method,
+                                    context=context.method_args_context)
         else:
-            args_context = Context(
-                azure_key_id=azure_key_id,
-                cloud_service_name=cloud_service_name,
-                deployment_name=deployment_name,
-                feature=feature,
-                true_method=true_method,
-                method_args_context=method_args_context
-            )
             self.scheduler.add_once(feature='azure_service',
                                     method='query_deployment_status',
-                                    context=args_context,
+                                    context=context,
                                     seconds=DEPLOYMENT_TICK)
 
-    def query_virtual_machine_status(self,
-                                     azure_key_id,
-                                     cloud_service_name,
-                                     deployment_name,
-                                     virtual_machine_name,
-                                     status,
-                                     feature,
-                                     true_method,
-                                     method_args_context):
-        self.log.debug('query virtual machine status: virtual_machine_name [%s]' % virtual_machine_name)
-        deployment = self.get_deployment_by_name(azure_key_id, cloud_service_name, deployment_name)
-        result = self.get_virtual_machine_instance_status(deployment, virtual_machine_name)
-        if result == status:
-            self.scheduler.add_once(feature=feature, method=true_method, context=method_args_context)
+    def query_virtual_machine_status(self, context):
+        """
+        :param context contains:
+                                 azure_key_id,
+                                 cloud_service_name,
+                                 deployment_name,
+                                 virtual_machine_name,
+                                 status,
+                                 feature,
+                                 true_method,
+                                 method_args_context:
+                                                    azure_key_id,
+                                                    experiment_id,
+                                                    template_unit
+        :return:
+        """
+        self.log.debug('query virtual machine status: virtual_machine_name [%s]' % context.virtual_machine_name)
+        deployment = self.get_deployment_by_name(context.azure_key_id,
+                                                 context.cloud_service_name,
+                                                 context.deployment_name)
+        result = self.get_virtual_machine_instance_status(deployment, context.virtual_machine_name)
+        if result == context.status:
+            self.scheduler.add_once(feature=context.feature,
+                                    method=context.true_method,
+                                    context=context.method_args_context)
         else:
-            args_context = Context(
-                azure_key_id=azure_key_id,
-                cloud_service_name=cloud_service_name,
-                deployment_name=deployment_name,
-                virtual_machine_name=virtual_machine_name,
-                status=status,
-                feature=feature,
-                true_method=true_method,
-                method_args_context=method_args_context
-            )
             self.scheduler.add_once(feature='azure_service',
                                     method='query_virtual_machine_status',
-                                    context=args_context,
+                                    context=context,
                                     seconds=DEPLOYMENT_TICK)

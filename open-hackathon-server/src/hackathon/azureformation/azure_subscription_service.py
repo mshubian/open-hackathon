@@ -32,7 +32,7 @@ from hackathon import Component, RequiredFeature
 
 
 class SubscriptionService(Component):
-    azure_service = RequiredFeature("azure_service")
+    azure_adapter = RequiredFeature("azure_adapter")
 
     """
     Subscription of azure resources according to given subscription id
@@ -46,7 +46,7 @@ class SubscriptionService(Component):
         :return:
         """
         try:
-            result = self.azure_service.get_subscription(azure_key_id)
+            result = self.azure_adapter.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT
@@ -59,7 +59,7 @@ class SubscriptionService(Component):
         :return:
         """
         try:
-            result = self.azure_service.get_subscription(azure_key_id)
+            result = self.azure_adapter.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT
@@ -72,7 +72,7 @@ class SubscriptionService(Component):
         :return:
         """
         try:
-            result = self.azure_service.get_subscription(azure_key_id)
+            result = self.azure_adapter.get_subscription(azure_key_id)
         except Exception as e:
             self.log.error(e)
             return self.ERROR_RESULT

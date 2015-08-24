@@ -54,7 +54,7 @@ class StorageAccount(Component):
     Storage account is used by azure virtual machines to store their disks
     """
     scheduler = RequiredFeature("scheduler")
-    azure_service = RequiredFeature("azure_service")
+    azure_adapter = RequiredFeature("azure_adapter")
     subscription = RequiredFeature("azure_subscription_service")
 
     def create_storage_account(self, azure_key_id, experiment_id, template_unit):
@@ -69,9 +69,9 @@ class StorageAccount(Component):
         location = template_unit.get_storage_account_location()
         commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.START)
         # avoid duplicate storage account in azure subscription
-        if not self.azure_service.storage_account_exists(azure_key_id, name):
+        if not self.azure_adapter.storage_account_exists(azure_key_id, name):
             # avoid name already taken by other azure subscription
-            if not self.azure_service.check_storage_account_name_availability(azure_key_id, name).result:
+            if not self.azure_adapter.check_storage_account_name_availability(azure_key_id, name).result:
                 m = '%s [%s] name not available' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, name)
                 commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 1)
                 self.log.error(m)
@@ -85,7 +85,7 @@ class StorageAccount(Component):
             # delete old azure storage account in database
             delete_azure_storage_account(name)
             try:
-                result = self.azure_service.create_storage_account(azure_key_id,
+                result = self.azure_adapter.create_storage_account(azure_key_id,
                                                                    name,
                                                                    description,
                                                                    label,
@@ -121,7 +121,7 @@ class StorageAccount(Component):
         label = template_unit.get_storage_account_label()
         location = template_unit.get_storage_account_location()
         # make sure storage account exist
-        if not self.azure_service.storage_account_exists(azure_key_id, name):
+        if not self.azure_adapter.storage_account_exists(azure_key_id, name):
             m = '%s [%s] created but not exist' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, name)
             commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 4)
             self.log.error(m)

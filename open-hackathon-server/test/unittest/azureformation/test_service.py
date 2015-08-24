@@ -27,8 +27,8 @@ __author__ = 'Yifu Huang'
 import sys
 sys.path.append("../src/hackathon")
 
-from hackathon.azureformation.azure_service import (
-    AzureService,
+from hackathon.azureformation.azure_adapter import (
+    AzureAdapter,
 )
 from hackathon.database.models import (
     AzureKey,
@@ -67,7 +67,7 @@ class ServiceTest(unittest.TestCase):
                                                           pem_url=pem_url,
                                                           management_host=management_host)
             azure_key_id = 0
-            self.service = AzureService(azure_key_id)
+            self.service = AzureAdapter(azure_key_id)
 
     def tearDown(self):
         pass

@@ -144,7 +144,7 @@ def init_components():
     from hackathon.remote.guacamole import GuacamoleInfo
     from hackathon.expr.expr_mgr import ExprManager
     from hackathon.cache.cache_mgr import CacheManagerExt
-    from hackathon.azureformation.azure_service import AzureService
+    from hackathon.azureformation.azure_adapter import AzureAdapter
     from hackathon.azureformation.azure_subscription_service import SubscriptionService
     from hackathon.azureformation.azure_vm_service import AzureVMService
 
@@ -184,7 +184,7 @@ def init_components():
     factory.provide("alauda_docker", get_class("hackathon.docker.alauda_docker.AlaudaDockerFormation"))
 
     # azure
-    factory.provide("azure_service", AzureService)
+    factory.provide("azure_adapter", AzureAdapter)
     factory.provide("azure_subscription_service", SubscriptionService)
     factory.provide("azure_vm_service", AzureVMService)
 
