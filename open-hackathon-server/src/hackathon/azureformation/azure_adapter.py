@@ -44,7 +44,7 @@ from azure.servicemanagement import (
     Deployment,
 )
 import time
-from hackathon import Component, RequiredFeature, Context
+from hackathon import Component, RequiredFeature
 
 
 class AzureAdapter(Component):

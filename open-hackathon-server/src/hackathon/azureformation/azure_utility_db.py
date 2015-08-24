@@ -42,9 +42,7 @@ from hackathon.database.models import (
     Experiment,
 )
 from hackathon.util import (
-    load_template,
-    call,
-    get_now,
+    load_template
 )
 
 from hackathon.constants import (
@@ -57,12 +55,7 @@ from azure.servicemanagement import (
     ConfigurationSet,
     ConfigurationSetInputEndpoint,
 )
-from datetime import (
-    timedelta,
-)
-from hackathon import (
-    RequiredFeature
-)
+
 # -------------------------------------------------- constants --------------------------------------------------#
 # project name
 AZURE_FORMATION = 'Azure Formation'
@@ -107,7 +100,7 @@ MDL_CLS_FUNC = [
     [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine_async_false'],       # 23
     [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine_vm_true'],           # 24
 ]
-DEFAULT_TICK = 3
+
 
 
 # -------------------------------------------------- azure log --------------------------------------------------#
@@ -377,14 +370,6 @@ def set_template_virtual_environment_count(experiment_id, count):
     t = db_adapter.get_object(Template, e.template_id)
     t.virtual_environment_count = count
     db_adapter.commit()
-
-
-# --------------------------------------------- scheduler ---------------------------------------------#
-def run_job(mdl_cls_func, cls_args, func_args, second=DEFAULT_TICK):
-    exec_time = get_now() + timedelta(seconds=second)
-    scheduler = RequiredFeature("scheduler")
-    scheduler.get_scheduler().add_job(call, 'date', run_date=exec_time, args=[mdl_cls_func, cls_args, func_args])
-
 
 # --------------------------------------------- experiment ---------------------------------------------#
 def update_experiment_status(experiment_id, status):

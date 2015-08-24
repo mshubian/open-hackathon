@@ -31,12 +31,10 @@ sys.path.append("..")
 
 from hackathon.azureformation.azure_utility_db import (
     AZURE_FORMATION,
-    MDL_CLS_FUNC,
     commit_azure_log,
     commit_azure_cloud_service,
     contain_azure_cloud_service,
-    delete_azure_cloud_service,
-    run_job,
+    delete_azure_cloud_service
 )
 
 from hackathon.constants import (

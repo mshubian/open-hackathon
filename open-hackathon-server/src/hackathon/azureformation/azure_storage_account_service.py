@@ -31,12 +31,10 @@ sys.path.append("..")
 
 from hackathon.azureformation.azure_utility_db import (
     AZURE_FORMATION,
-    MDL_CLS_FUNC,
     commit_azure_log,
     commit_azure_storage_account,
     contain_azure_storage_account,
     delete_azure_storage_account,
-    run_job,
 )
 
 from hackathon.constants import (
@@ -83,23 +81,26 @@ class StorageAccount(Component):
                                     seconds=3)
         return True
 
-    def create_storage_account_async_true(self, azure_key_id, experiment_id, template_unit):
-        name = template_unit.get_storage_account_name()
-        description = template_unit.get_storage_account_description()
-        label = template_unit.get_storage_account_label()
-        location = template_unit.get_storage_account_location()
+    def create_storage_account_async_true(self, context):
+        name = context.template_unit.get_storage_account_name()
+        description = context.template_unit.get_storage_account_description()
+        label = context.template_unit.get_storage_account_label()
+        location = context.template_unit.get_storage_account_location()
         # make sure storage account exist
-        if not self.azure_adapter.storage_account_exists(azure_key_id, name):
+        if not self.azure_adapter.storage_account_exists(context.azure_key_id, name):
             m = '%s [%s] created but not exist' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, name)
-            commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 4)
+            commit_azure_log(context.experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 4)
             self.log.error(m)
         else:
             m = '%s [%s] created' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, name)
-            commit_azure_storage_account(name, description, label, location, ASAStatus.ONLINE, experiment_id)
-            commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.END, m, 0)
+            commit_azure_storage_account(name, description, label, location, ASAStatus.ONLINE, context.experiment_id)
+            commit_azure_log(context.experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.END, m, 0)
             self.log.debug(m)
             # create cloud service
-            run_job(MDL_CLS_FUNC[1], (azure_key_id,), (experiment_id, template_unit))
+            self.scheduler.add_once(feature='azure_cloud_service',
+                                    method='create_cloud_service',
+                                    context=context,
+                                    seconds=3)
 
     def create_storage_account_async_false(self, experiment_id, template_unit):
         name = template_unit.get_storage_account_name()
@@ -131,13 +132,13 @@ class StorageAccount(Component):
             m = '%s [%s] name not available' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, args_context.name)
             commit_azure_log(args_context.experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 1)
             self.log.error(m)
-            raise BadRequest("storaget accout name not available")
+            raise BadRequest("storage account name not available")
         # avoid no available subscription remained
         if self.subscription.get_available_storage_account_count(args_context.azure_key_id) < 1:
             m = '%s [%s] subscription not enough' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, args_context.name)
             commit_azure_log(args_context.experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 2)
             self.log.error(m)
-            raise BadRequest("storaget accout subscription not enough")
+            raise BadRequest("storage account subscription not enough")
 
     def __create_storage_account_in_azure_service(self, context, args_context):
         try:
