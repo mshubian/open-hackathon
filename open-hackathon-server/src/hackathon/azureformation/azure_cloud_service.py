@@ -71,7 +71,7 @@ class CloudService(Component):
 
         if self.azure_adapter.cloud_service_exists(context.azure_key_id, args_context.name):
             self.__check_cloud_service_in_db(args_context)
-        else:    
+        else:
             self.__check_creation_requirement(args_context)
             # delete old azure cloud service in database, cascade delete old azure deployment,
             # old azure virtual machine and old azure end point
@@ -95,32 +95,32 @@ class CloudService(Component):
     def delete_cloud_service(self):
         raise NotImplementedError
 
-     # ---------------------------------------- helper functions---------------------------------------- #
-    
+        # ---------------------------------------- helper functions---------------------------------------- #
+
     def __generate_create_cloud_service_context(self, context):
         return Context(
-            azure_key_id = context.azure_key_id,
-            experiment_id = context.experiment_id,
-            name = context.template_unit.get_cloud_service_name(),
-            label = context.template_unit.get_cloud_service_label(),
-            location = context.template_unit.get_cloud_service_location()
+            azure_key_id=context.azure_key_id,
+            experiment_id=context.experiment_id,
+            name=context.template_unit.get_cloud_service_name(),
+            label=context.template_unit.get_cloud_service_label(),
+            location=context.template_unit.get_cloud_service_location()
         )
-    
+
     def __check_creation_requirement(self, context):
-            # avoid name already taken by other azure subscription
-            if not self.azure_adapter.check_hosted_service_name_availability(context.azure_key_id, context.name).result:
-                m = '%s [%s] name not available' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
-                commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.FAIL, m, 1)
-                self.log.error(m)
-                raise BadRequest("cloud service name not available")
-            # avoid no available subscription remained
-            if self.subscription.get_available_cloud_service_count(context.azure_key_id) < 1:
-                m = '%s [%s] subscription not enough' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
-                commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.FAIL, m, 2)
-                self.log.error(m)
-                raise BadRequest("cloud service subscription not enough")
-            delete_azure_cloud_service(context.name)        
-    
+        # avoid name already taken by other azure subscription
+        if not self.azure_adapter.check_hosted_service_name_availability(context.azure_key_id, context.name).result:
+            m = '%s [%s] name not available' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
+            commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.FAIL, m, 1)
+            self.log.error(m)
+            raise BadRequest("cloud service name not available")
+        # avoid no available subscription remained
+        if self.subscription.get_available_cloud_service_count(context.azure_key_id) < 1:
+            m = '%s [%s] subscription not enough' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
+            commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.FAIL, m, 2)
+            self.log.error(m)
+            raise BadRequest("cloud service subscription not enough")
+        delete_azure_cloud_service(context.name)
+
     def __create_cloud_service(self, context):
         try:
             commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.START)
@@ -132,8 +132,8 @@ class CloudService(Component):
             m = '%s [%s] %s' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name, e.message)
             commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.FAIL, m, 0)
             self.log.error(e)
-            raise InternalServerError("azure service raised a exception when create cloud service")       
-    
+            raise InternalServerError("azure service raised a exception when create cloud service")
+
     def __check_exist_after_creation(self, context):
         if not self.azure_adapter.cloud_service_exists(context.azure_key_id, context.name):
             m = '%s [%s] created but not exist' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
@@ -142,17 +142,29 @@ class CloudService(Component):
             return False
         else:
             m = '%s [%s] created' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name)
-            commit_azure_cloud_service(context.name, context.label, context.location, ACSStatus.CREATED, context.experiment_id)
-            commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.END, m, 0)
-            self.log.debug(m)  
-            
+            commit_azure_cloud_service(context.name,
+                                       context.label,
+                                       context.location,
+                                       ACSStatus.CREATED,
+                                       context.experiment_id)
+            commit_azure_log(context.experiment_id,
+                             ALOperation.CREATE_CLOUD_SERVICE,
+                             ALStatus.END, m, 0)
+            self.log.debug(m)
+
     def __check_cloud_service_in_db(self, context):
         # check whether cloud service created by azure formation before
         if contain_azure_cloud_service(context.name):
-            m = '%s [%s] exist and created by %s before' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name, AZURE_FORMATION)
+            m = '%s [%s] exist and created by %s before' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE,
+                                                            context.name,
+                                                            AZURE_FORMATION)
             commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.END, m, 1)
         else:
-            m = '%s [%s] exist but not created by %s before' % (AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name, AZURE_FORMATION)
-            commit_azure_cloud_service(context.name, context.label, context.location, ACSStatus.CREATED, context.experiment_id)
+            m = '%s [%s] exist but not created by %s before' % (
+            AZURE_RESOURCE_TYPE.CLOUD_SERVICE, context.name, AZURE_FORMATION)
+            commit_azure_cloud_service(context.name, context.label,
+                                       context.location,
+                                       ACSStatus.CREATED,
+                                       context.experiment_id)
             commit_azure_log(context.experiment_id, ALOperation.CREATE_CLOUD_SERVICE, ALStatus.END, m, 2)
-        self.log.debug(m)        
+        self.log.debug(m)

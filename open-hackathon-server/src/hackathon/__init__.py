@@ -147,6 +147,8 @@ def init_components():
     from hackathon.azureformation.azure_adapter import AzureAdapter
     from hackathon.azureformation.azure_subscription_service import SubscriptionService
     from hackathon.azureformation.azure_vm_service import AzureVMService
+    from hackathon.azureformation.azure_storage_account_service import StorageAccount
+    from hackathon.azureformation.azure_cloud_service import CloudService
 
     # dependencies MUST be provided in advance
     factory.provide("util", Utility)
@@ -187,6 +189,8 @@ def init_components():
     factory.provide("azure_adapter", AzureAdapter)
     factory.provide("azure_subscription_service", SubscriptionService)
     factory.provide("azure_vm_service", AzureVMService)
+    factory.provide("azure_cloud_service", CloudService)
+    factory.provide("azure_storage_account_service", StorageAccount)
 
     # storage
     init_hackathon_storage()
