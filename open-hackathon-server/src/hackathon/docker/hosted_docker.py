@@ -55,8 +55,8 @@ from threading import (
 from hackathon.template.docker_template_unit import (
     DockerTemplateUnit,
 )
-from hackathon.azureformation.endpoint import (
-    Endpoint
+from hackathon.azureformation.azure_endpoint_service import (
+    EndpointService
 )
 from docker_formation_base import (
     DockerFormationBase,
@@ -437,7 +437,7 @@ class HostedDockerFormation(DockerFormationBase, Component):
 
     def __get_available_public_ports(self, expr_id, host_server, host_ports):
         self.log.debug("starting to get azure ports")
-        ep = Endpoint(AzureAdapter(self.load_azure_key_id(expr_id)))
+        ep = EndpointService(AzureAdapter(self.load_azure_key_id(expr_id)))
         host_server_name = host_server.vm_name
         host_server_dns = host_server.public_dns.split('.')[0]
         public_endpoints = ep.assign_public_endpoints(host_server_dns, 'Production', host_server_name, host_ports)
@@ -538,7 +538,7 @@ class HostedDockerFormation(DockerFormationBase, Component):
         self.log.debug("End to release ports: expr_id: %d, host_server: %r" % (expr_id, host_server))
 
     def __release_public_ports(self, expr_id, host_server, host_ports):
-        ep = Endpoint(AzureAdapter(self.load_azure_key_id(expr_id)))
+        ep = EndpointService(AzureAdapter(self.load_azure_key_id(expr_id)))
         host_server_name = host_server.vm_name
         host_server_dns = host_server.public_dns.split('.')[0]
         self.log.debug("starting to release ports ... ")

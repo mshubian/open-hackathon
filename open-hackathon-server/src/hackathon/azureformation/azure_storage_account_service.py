@@ -102,10 +102,10 @@ class StorageAccount(Component):
                                     context=context,
                                     seconds=3)
 
-    def create_storage_account_async_false(self, experiment_id, template_unit):
-        name = template_unit.get_storage_account_name()
+    def create_storage_account_async_false(self, context):
+        name = context.template_unit.get_storage_account_name()
         m = '%s [%s] wait for async fail' % (AZURE_RESOURCE_TYPE.STORAGE_ACCOUNT, name)
-        commit_azure_log(experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 3)
+        commit_azure_log(context.experiment_id, ALOperation.CREATE_STORAGE_ACCOUNT, ALStatus.FAIL, m, 3)
         self.log.error(m)
 
     # todo update storage account

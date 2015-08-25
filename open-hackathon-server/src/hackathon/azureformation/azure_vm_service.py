@@ -381,7 +381,7 @@ class AzureVMService(Component):
     def stop_virtual_machine_async_true(self, context):
         """
 
-        :param context contains : azure_key_id, experiment_id, template_unit, need_status
+        :param context : contains azure_key_id, experiment_id, template_unit, need_status
         :return:
         """
         cloud_service_name = context.template_unit.get_cloud_service_name()
@@ -389,8 +389,10 @@ class AzureVMService(Component):
         query_context = Context(
             cloud_service_name=cloud_service_name,
             deployment_slot=deployment_slot,
-            deployment_name=self.azure_adapter.get_deployment_name(context.azure_key_id, cloud_service_name, deployment_slot),
-            virtual_machine_name='%s-%d' % (context.template_unit.get_virtual_machine_name(),context. experiment_id),
+            deployment_name=self.azure_adapter.get_deployment_name(context.azure_key_id,
+                                                                   cloud_service_name,
+                                                                   deployment_slot),
+            virtual_machine_name='%s-%d' % (context.template_unit.get_virtual_machine_name(), context. experiment_id),
             status=context.need_status,
             feature='azure_vm_service',
             true_method='stop_virtual_machine_vm_true',
@@ -404,7 +406,7 @@ class AzureVMService(Component):
     def stop_virtual_machine_async_false(self, context):
         """
 
-        :param context contains : azure_key_id, experiment_id, template_unit, need_status
+        :param context : contains azure_key_id, experiment_id, template_unit, need_status
         :return:
         """
         virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(), context.experiment_id)
@@ -416,10 +418,10 @@ class AzureVMService(Component):
     def stop_virtual_machine_vm_true(self, context):
         """
 
-        :param context contains : azure_key_id, experiment_id, template_unit, need_status
+        :param context : contains azure_key_id, experiment_id, template_unit, need_status
         :return:
         """
-        virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(),context.experiment_id)
+        virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(), context.experiment_id)
         self.__stop_virtual_machine_helper(context.experiment_id, context.template_unit, context.need_status)
         m = '%s [%s] %s' % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, context.need_status)
         commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 0)
@@ -431,8 +433,8 @@ class AzureVMService(Component):
         """
         0. Prerequisites: a. virtual machine exist in both azure and database
                           b. input parameters are correct
-        :param context contains : azure_key_id, experiment_id, template_unit
-        :param template_unit:
+        :param context : contains azure_key_id, experiment_id, template_unit
+
         :return:
         """
         commit_azure_log(context.experiment_id, ALOperation.START_VIRTUAL_MACHINE, ALStatus.START)
@@ -440,7 +442,7 @@ class AzureVMService(Component):
         deployment_slot = context.template_unit.get_deployment_slot()
         deployment_name = self.azure_adapter.get_deployment_name(cloud_service_name, deployment_slot)
         deployment = self.azure_adapter.get_deployment_by_name(cloud_service_name, deployment_name)
-        virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(),context.experiment_id)
+        virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(), context.experiment_id)
         status = self.azure_adapter.get_virtual_machine_instance_status(deployment, virtual_machine_name)
         if status == AVMStatus.READY_ROLE:
             db_status = get_azure_virtual_machine_status(cloud_service_name, deployment_name, virtual_machine_name)
@@ -464,6 +466,7 @@ class AzureVMService(Component):
                     AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, e.message)
                 commit_azure_log(context.experiment_id, ALOperation.START_VIRTUAL_MACHINE, ALStatus.FAIL, 0)
                 self.log.error(e)
+                self.log.error(m)
                 return False
 
             # query async operation status
@@ -488,7 +491,9 @@ class AzureVMService(Component):
         query_context = Context(
             cloud_service_name=cloud_service_name,
             deployment_slot=deployment_slot,
-            deployment_name=self.azure_adapter.get_deployment_name(context.azure_key_id, cloud_service_name, deployment_slot),
+            deployment_name=self.azure_adapter.get_deployment_name(context.azure_key_id,
+                                                                   cloud_service_name,
+                                                                   deployment_slot),
             virtual_machine_name='%s-%d' % (context.template_unit.get_virtual_machine_name(), context.experiment_id),
             status=AVMStatus.READY_ROLE,
             feature='azure_vm_service',
@@ -640,8 +645,8 @@ class AzureVMService(Component):
 
     def __generate_create_vm_context(self, context):
         context.deployment_slot = context.template_unit.get_deployment_slot()
-        context.virtual_machine_name = '%s-%d' % (
-        context.template_unit.get_virtual_machine_name(), context.experiment_id)
+        context.virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(),
+                                                  context.experiment_id)
         context.virtual_machine_size = context.template_unit.get_virtual_machine_size()
         context.cloud_service_name = context.template_unit.get_cloud_service_name()
         context.vm_image_name = context.template_unit.get_vm_image_name()
