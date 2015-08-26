@@ -23,8 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-__author__ = 'Yifu Huang'
-
 import sys
 
 sys.path.append("..")
@@ -62,7 +60,7 @@ from hackathon.constants import (
 import json
 from werkzeug.exceptions import InternalServerError, BadRequest
 from hackathon import Context, RequiredFeature, Component
-
+from hackathon.azureformation.templateFramework import TemplateFramework
 
 # todo take care of resource check
 # todo support batch operations
@@ -119,6 +117,23 @@ class AzureVMService(Component):
     #     super(AzureVMService, self).__init__(azure_key_id)
 
     # --------------------------------------------- create vm functions ---------------------------------------------#
+
+    def create_vm_for_expr_entry(self, context):
+        """create a vm when needed for expr_mangement
+
+        callable logic : create storage account -> create cloud service -> cretae virtual machine
+
+        :param context : contains azure_key_id, experiment_id
+        :return:
+        """
+        template_framework = TemplateFramework(context.experiment_id)
+        for template_unit in template_framework.get_template_units():
+            # create storage account
+            context.template_unit = template_unit
+            self.scheduler.add_once(feature='azure_storage_account_service',
+                                    method='create_storage_account',
+                                    context=context,
+                                    seconds=3)
 
     def create_virtual_machine(self, context):
         """create a vm in azure
@@ -305,6 +320,24 @@ class AzureVMService(Component):
 
     # --------------------------------------------- stop vm functions ---------------------------------------------#
 
+    def stop_vm_entry(self, context):
+        """
+
+        :param context:
+                        azure_key_id,
+                        experiment_id,
+                        action: AVMStatus.STOPPED or AVMStatus.STOPPED_DEALLOCATED
+        :return:
+        """
+        template_framework = TemplateFramework(context.experiment_id)
+        for template_unit in template_framework.get_template_units():
+            # stop virtual machine
+            context.template_unit = template_unit
+            self.scheduler.add_once(feature='azure_vm_service',
+                                    method='stop_virtual_machine',
+                                    context=context,
+                                    seconds=3)
+
     def stop_virtual_machine(self, azure_key_id, experiment_id, template_unit, action):
         """
         0. Prerequisites: a. virtual machine exist in both azure and database
@@ -428,6 +461,21 @@ class AzureVMService(Component):
         self.log.debug(m)
 
     # --------------------------------------------- start vm functions ---------------------------------------------#
+
+    def start_vm_entry(self, context):
+        """
+
+        :param context: azure_key_id, experiment_id,
+        :return:
+        """
+        template_framework = TemplateFramework(context.experiment_id)
+        for template_unit in template_framework.get_template_units():
+            # start virtual machine
+            context.template_unit = template_unit
+            self.scheduler.add_once(feature='azure_vm_service',
+                                    method='start_virtual_machine',
+                                    context=context,
+                                    seconds=3)
 
     def start_virtual_machine(self, context):
         """

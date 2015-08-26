@@ -31,6 +31,7 @@ sys.path.append("..")
 from hackathon import (
     Component,
     RequiredFeature,
+    Context
 )
 
 from hackathon.constants import (
@@ -51,15 +52,10 @@ from hackathon.database.models import (
     User,
     HackathonTemplateRel)
 
-from hackathon.azureformation.azureFormation import (
-    AzureFormation,
-)
-
 from hackathon.hackathon_response import (
     internal_server_error,
     precondition_failed,
     not_found,
-    forbidden,
     ok,
 )
 
@@ -88,6 +84,7 @@ class ExprManager(Component):
     template_manager = RequiredFeature("template_manager")
     docker = RequiredFeature("docker")
     scheduler = RequiredFeature("scheduler")
+    azure_vm_service = RequiredFeature("azure_vm_service")
 
     def start_expr(self, hackathon_name, template_name, user_id):
         """
@@ -162,9 +159,11 @@ class ExprManager(Component):
             else:
                 try:
                     # todo support delete azure vm
-                    hosted_docker = RequiredFeature("hosted_docker")
-                    af = AzureFormation(hosted_docker.load_azure_key_id(expr_id))
-                    af.stop(expr_id, AVMStatus.STOPPED_DEALLOCATED)
+                    azure_key_id = self.docker.load_azure_key_id(expr.id)
+                    context = Context(azure_key_id=azure_key_id,
+                                      experiment_id=expr.id,
+                                      action=AVMStatus.STOPPED_DEALLOCATED)
+                    self.azure_vm_service.stop_vm_entry(context)
                 except Exception as e:
                     self.log.error(e)
                     return internal_server_error('Failed stopping azure')
@@ -319,8 +318,9 @@ class ExprManager(Component):
             expr.status = EStatus.STARTING
             self.db.commit()
             try:
-                af = AzureFormation(self.docker.__load_azure_key_id(expr.id))
-                af.create(expr.id)
+                azure_key_id = self.docker.load_azure_key_id(expr.id)
+                context = Context(azure_key_id=azure_key_id, experiment_id=expr.id)
+                self.azure_vm_service.create_vm_for_expr_entry(context)
             except Exception as e:
                 self.log.error(e)
                 return internal_server_error('Failed starting azure vm')
