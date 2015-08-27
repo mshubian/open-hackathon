@@ -137,7 +137,16 @@ class AzureHealthCheck(HealthCheck):
 
     def report_health(self):
         azure_key = self.db.find_first_object(AzureKey)
+<<<<<<< HEAD
         azure = AzureAdapter(azure_key.id)
+=======
+        if not azure_key:
+            return {
+                STATUS: HEALTH_STATUS.WARNING,
+                DESCRIPTION: "No Azure key found"
+            }
+        azure = Service(azure_key.id)
+>>>>>>> msopentech/master
         if azure.ping():
             return {
                 STATUS: HEALTH_STATUS.OK

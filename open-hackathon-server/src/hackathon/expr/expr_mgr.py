@@ -321,6 +321,7 @@ class ExprManager(Component):
                 azure_key_id = self.docker.load_azure_key_id(expr.id)
                 context = Context(azure_key_id=azure_key_id, experiment_id=expr.id)
                 self.azure_vm_service.create_vm_for_expr_entry(context)
+
             except Exception as e:
                 self.log.error(e)
                 return internal_server_error('Failed starting azure vm')
