@@ -338,31 +338,33 @@ class AzureVMService(Component):
                                     context=context,
                                     seconds=3)
 
-    def stop_virtual_machine(self, azure_key_id, experiment_id, template_unit, action):
+    def stop_virtual_machine(self, context):
         """
         0. Prerequisites: a. virtual machine exist in both azure and database
                           b. input parameters are correct
-        :param experiment_id:
-        :param template_unit:
-        :param action: AVMStatus.STOPPED or AVMStatus.STOPPED_DEALLOCATED
+        :param context :
+                        azure_key_id,
+                        experiment_id,
+                        template_unit,
+                        action: AVMStatus.STOPPED or AVMStatus.STOPPED_DEALLOCATED
         :return:
         """
-        commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.START)
+        commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.START)
         # need_status: AVMStatus.STOPPED_VM or AVMStatus.STOPPED_DEALLOCATED
-        need_status = AVMStatus.STOPPED_VM if action == AVMStatus.STOPPED else AVMStatus.STOPPED_DEALLOCATED
-        cloud_service_name = template_unit.get_cloud_service_name()
-        deployment_slot = template_unit.get_deployment_slot()
+        need_status = AVMStatus.STOPPED_VM if context.action == AVMStatus.STOPPED else AVMStatus.STOPPED_DEALLOCATED
+        cloud_service_name = context.template_unit.get_cloud_service_name()
+        deployment_slot = context.template_unit.get_deployment_slot()
         deployment_name = self.azure_adapter.get_deployment_name(cloud_service_name, deployment_slot)
         deployment = self.azure_adapter.get_deployment_by_name(cloud_service_name, deployment_name)
-        virtual_machine_name = '%s-%d' % (template_unit.get_virtual_machine_name(),
-                                          experiment_id)
+        virtual_machine_name = '%s-%d' % (context.template_unit.get_virtual_machine_name(),
+                                          context.experiment_id)
         now_status = self.azure_adapter.get_virtual_machine_instance_status(deployment, virtual_machine_name)
         if need_status == AVMStatus.STOPPED_VM and now_status == AVMStatus.STOPPED_DEALLOCATED:
             m = '%s [%s] need status %s but now status %s' % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE,
                                                               virtual_machine_name,
                                                               AVMStatus.STOPPED_VM,
                                                               AVMStatus.STOPPED_DEALLOCATED)
-            commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.FAIL, m, 1)
+            commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.FAIL, m, 1)
             self.log.error(m)
             return False
         elif need_status == now_status:
@@ -372,34 +374,34 @@ class AzureVMService(Component):
                                                      virtual_machine_name,
                                                      need_status,
                                                      AZURE_FORMATION)
-                commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 1)
+                commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 1)
             else:
                 m = '%s [%s] %s but not by %s before' % (AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE,
                                                          virtual_machine_name,
                                                          need_status,
                                                          AZURE_FORMATION)
-                self.__stop_virtual_machine_helper(experiment_id, template_unit, need_status)
-                commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 2)
+                self.__stop_virtual_machine_helper(context.experiment_id, context.template_unit, need_status)
+                commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.END, m, 2)
             self.log.debug(m)
         else:
             try:
                 result = self.azure_adapter.stop_virtual_machine(cloud_service_name,
                                                                  deployment_name,
                                                                  virtual_machine_name,
-                                                                 action)
+                                                                 context.action)
             except Exception as e:
                 m = '%s [%s] %s' % (
                     AZURE_RESOURCE_TYPE.VIRTUAL_MACHINE, virtual_machine_name, e.message)
-                commit_azure_log(experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.FAIL, 0)
+                commit_azure_log(context.experiment_id, ALOperation.STOP_VIRTUAL_MACHINE, ALStatus.FAIL, 0)
                 self.log.error(m)
                 self.log.error(e)
                 return False
             # query async operation status
-            method_args_context = self.__generate_base_context(azure_key_id, experiment_id, template_unit)
+            method_args_context = self.__generate_base_context(context.azure_key_id, context.experiment_id, context.template_unit)
             method_args_context.need_status = need_status
             query_context = Context(
                 request_id=result.id,
-                azure_key_id=azure_key_id,
+                azure_key_id=context.azure_key_id,
                 feature='azure_vm_service',
                 true_method='stop_virtual_machine_async_true',
                 false_method='stop_virtual_machine_async_false',

@@ -70,37 +70,6 @@ PORT_BOUND = 65536
 # endpoint constants
 ENDPOINT_PREFIX = 'AUTO-'
 ENDPOINT_PROTOCOL = 'TCP'
-# module base
-MDL_BASE = 'hackathon.azureformation.'
-# module name, class name and function name
-MDL_CLS_FUNC = [
-    [MDL_BASE + 'storageAccount', 'StorageAccount', 'create_storage_account'],                    # 0
-    [MDL_BASE + 'azure_cloud_service', 'CloudService', 'create_cloud_service'],                   # 1
-    [MDL_BASE + 'azure_service', 'Service', 'query_async_operation_status'],                      # 2
-    [MDL_BASE + 'storageAccount', 'StorageAccount', 'create_storage_account_async_true'],         # 3
-    [MDL_BASE + 'storageAccount', 'StorageAccount', 'create_storage_account_async_false'],        # 4
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine'],                  # 5
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_true_1'],     # 6
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_false_1'],    # 7
-    [MDL_BASE + 'azure_service', 'Service', 'query_virtual_machine_status'],                      # 8
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_vm_true_1'],        # 9
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_true_2'],     # 10
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_false_2'],    # 11
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_vm_true_2'],        # 12
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_true_3'],     # 13
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_async_false_3'],    # 14
-    [MDL_BASE + 'azure_service', 'Service', 'query_deployment_status'],                           # 15
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'create_virtual_machine_dm_true'],          # 16
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'stop_virtual_machine'],                    # 17
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'stop_virtual_machine_async_true'],         # 18
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'stop_virtual_machine_async_false'],        # 19
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'stop_virtual_machine_vm_true'],            # 20
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine'],                   # 21
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine_async_true'],        # 22
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine_async_false'],       # 23
-    [MDL_BASE + 'azure_vm_service', 'VirtualMachine', 'start_virtual_machine_vm_true'],           # 24
-]
-
 
 
 # -------------------------------------------------- azure log --------------------------------------------------#
@@ -370,6 +339,7 @@ def set_template_virtual_environment_count(experiment_id, count):
     t = db_adapter.get_object(Template, e.template_id)
     t.virtual_environment_count = count
     db_adapter.commit()
+
 
 # --------------------------------------------- experiment ---------------------------------------------#
 def update_experiment_status(experiment_id, status):
